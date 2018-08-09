@@ -9,4 +9,3 @@ target/
 .project
 .settings/
 *.bak
-fabric.db
