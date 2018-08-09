@@ -1,0 +1,12 @@
+.idea/*
+*.iml
+logs/
+target/
+*/target
+*/*.iml
+.DS_Store
+.classpath
+.project
+.settings/
+*.bak
+fabric.db
