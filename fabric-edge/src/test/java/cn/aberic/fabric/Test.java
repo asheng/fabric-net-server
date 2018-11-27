@@ -26,7 +26,7 @@ public class Test {
     }
 
     private static void testCrypt(){
-        String filePath = "/Users/Aberic/Documents/tmp/key";
+        String filePath = "/Users/jason.zs/Downloads/tmp/cyper";
         Utils.obtain().createRSAKeyPair(filePath, "Test");
         String pubFilePath = String.format("%s/%s_publicRSA.key", filePath, "Test");
         String priFilePath = String.format("%s/%s_privateRSA.key", filePath, "Test");
