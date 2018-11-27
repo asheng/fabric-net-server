@@ -83,8 +83,8 @@ class IntermediateOrg {
     }
 
     /** 新增排序服务器 */
-    void addOrderer(String name, String location, String serverCrtPath) {
-        orderers.add(new IntermediateOrderer(name, location, serverCrtPath));
+    void addOrderer(String name, String location, String serverCrtPath, String clientCertPath, String clientKeyPath) {
+        orderers.add(new IntermediateOrderer(name, location, serverCrtPath, clientCertPath, clientKeyPath));
     }
 
     /** 获取排序服务器集合 */
@@ -102,8 +102,8 @@ class IntermediateOrg {
     }
 
     /** 新增节点服务器 */
-    void addPeer(String peerName, String peerLocation, String peerEventHubLocation, String serverCrtPath) {
-        peers.add(new IntermediatePeer(peerName, peerLocation, peerEventHubLocation, serverCrtPath));
+    void addPeer(String peerName, String peerLocation, String peerEventHubLocation, String serverCrtPath, String clientCertPath, String clientKeyPath) {
+        peers.add(new IntermediatePeer(peerName, peerLocation, peerEventHubLocation, serverCrtPath, clientCertPath, clientKeyPath));
     }
 
     /** 获取排序服务器集合 */
@@ -166,9 +166,9 @@ class IntermediateOrg {
         return openTLS;
     }
 
-    void addUser(IntermediateUser user, FabricStore fabricStore) {
+    void addUser(String leagueName, String orgName, String peerName, IntermediateUser user, FabricStore fabricStore) {
         try {
-            userMap.put(user.getName(), fabricStore.getMember(user.getName(), orgMSPID, user.getSkPath(), user.getCertificatePath()));
+            userMap.put(user.getName(), fabricStore.getMember(leagueName, orgName, peerName, user.getName(), orgMSPID, user.getSkPath(), user.getCertificatePath()));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -180,9 +180,9 @@ class IntermediateOrg {
 
     void setClient(HFClient client) throws CryptoException, InvalidArgumentException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         this.client = client;
-        log.debug("Create instance of HFClient");
+        log.info("Create instance of HFClient");
         client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        log.debug("Set Crypto Suite of HFClient");
+        log.info("Set Crypto Suite of HFClient");
     }
 
     HFClient getClient() {

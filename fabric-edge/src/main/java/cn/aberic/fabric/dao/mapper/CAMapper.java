@@ -16,7 +16,7 @@
 
 package cn.aberic.fabric.dao.mapper;
 
-import cn.aberic.fabric.dao.CA;
+import cn.aberic.fabric.dao.entity.CA;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -28,90 +28,55 @@ import java.util.List;
 @Mapper
 public interface CAMapper {
 
-    @Insert("insert into ca (name,sk_path,certificate_path,tls,flag,peer_id,date) values " +
-            "(#{c.name},#{c.skPath},#{c.certificatePath},#{c.tls},#{c.flag},#{c.peerId},#{c.date})")
+    @Insert("insert into fns_ca (name,sk,certificate,flag,peer_id,date) values " +
+            "(#{c.name},#{c.sk},#{c.certificate},#{c.flag},#{c.peerId},#{c.date})")
     int add(@Param("c") CA ca);
 
-    @Update("update ca set name=#{c.name},sk_path=#{c.skPath},certificate_path=#{c.certificatePath},tls=#{c.tls},flag=#{c.flag} where rowid=#{c.id}")
+    @Update("update fns_ca set name=#{c.name},sk=#{c.sk},certificate=#{c.certificate},flag=#{c.flag} where id=#{c.id}")
     int update(@Param("c") CA ca);
 
-    @Update("update ca set name=#{c.name},tls=#{c.tls},flag=#{c.flag} where rowid=#{c.id}")
+    @Update("update fns_ca set name=#{c.name},flag=#{c.flag} where id=#{c.id}")
     int updateWithNoFile(@Param("c") CA ca);
 
-    @Select("select count(name) from ca where peer_id=#{id}")
+    @Select("select count(name) from fns_ca where peer_id=#{id}")
     int count(@Param("id") int id);
 
-    @Select("select count(name) from ca")
+    @Select("select count(name) from fns_ca")
     int countAll();
 
-    @Delete("delete from ca where rowid=#{id}")
+    @Delete("delete from fns_ca where id=#{id}")
     int delete(@Param("id") int id);
 
-    @Delete("delete from ca where peer_id=#{peerId}")
+    @Delete("delete from fns_ca where peer_id=#{peerId}")
     int deleteAll(@Param("peerId") int peerId);
 
-    @Select("select rowid,name,sk_path,certificate_path,tls,flag,peer_id,date from ca where name=#{c.name} and peer_id=#{c.peerId}")
+    @Select("select id,name,sk,certificate,flag,peer_id,date from fns_ca where name=#{c.name} and peer_id=#{c.peerId}")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "skPath", column = "sk_path"),
-            @Result(property = "certificatePath", column = "certificate_path"),
-            @Result(property = "tls", column = "tls"),
-            @Result(property = "flag", column = "flag"),
-            @Result(property = "peerId", column = "peer_id"),
-            @Result(property = "date", column = "date")
+            @Result(property = "peerId", column = "peer_id")
     })
     CA check(@Param("c") CA ca);
 
-    @Select("select rowid,name,sk_path,certificate_path,tls,flag,peer_id,date from ca where rowid=#{id}")
+    @Select("select id,name,sk,certificate,flag,peer_id,date from fns_ca where id=#{id}")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "skPath", column = "sk_path"),
-            @Result(property = "certificatePath", column = "certificate_path"),
-            @Result(property = "tls", column = "tls"),
-            @Result(property = "flag", column = "flag"),
-            @Result(property = "peerId", column = "peer_id"),
-            @Result(property = "date", column = "date")
+            @Result(property = "peerId", column = "peer_id")
     })
     CA get(@Param("id") int id);
 
-    @Select("select rowid,name,sk_path,certificate_path,tls,flag,peer_id,date from ca where flag=#{flag}")
+    @Select("select id,name,sk,certificate,flag,peer_id,date from fns_ca where flag=#{flag}")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "skPath", column = "sk_path"),
-            @Result(property = "certificatePath", column = "certificate_path"),
-            @Result(property = "tls", column = "tls"),
-            @Result(property = "flag", column = "flag"),
-            @Result(property = "peerId", column = "peer_id"),
-            @Result(property = "date", column = "date")
+            @Result(property = "peerId", column = "peer_id")
     })
     CA getByFlag(@Param("flag") String flag);
 
-    @Select("select rowid,name,sk_path,certificate_path,tls,flag,peer_id,date from ca where peer_id=#{id}")
+    @Select("select id,name,sk,certificate,flag,peer_id,date from fns_ca where peer_id=#{id}")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "skPath", column = "sk_path"),
-            @Result(property = "certificatePath", column = "certificate_path"),
-            @Result(property = "tls", column = "tls"),
-            @Result(property = "flag", column = "flag"),
-            @Result(property = "peerId", column = "peer_id"),
-            @Result(property = "date", column = "date")
+            @Result(property = "peerId", column = "peer_id")
     })
     List<CA> list(@Param("id") int id);
 
-    @Select("select rowid,name,sk_path,certificate_path,tls,flag,peer_id,date from ca")
+    @Select("select id,name,sk,certificate,flag,peer_id,date from fns_ca")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "name", column = "name"),
-            @Result(property = "skPath", column = "sk_path"),
-            @Result(property = "certificatePath", column = "certificate_path"),
-            @Result(property = "tls", column = "tls"),
-            @Result(property = "flag", column = "flag"),
-            @Result(property = "peerId", column = "peer_id"),
-            @Result(property = "date", column = "date")
+            @Result(property = "peerId", column = "peer_id")
     })
     List<CA> listAll();
 

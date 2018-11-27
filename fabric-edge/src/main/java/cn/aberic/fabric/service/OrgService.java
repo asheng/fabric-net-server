@@ -16,8 +16,8 @@
 
 package cn.aberic.fabric.service;
 
-import cn.aberic.fabric.dao.Org;
-import org.springframework.web.multipart.MultipartFile;
+import cn.aberic.fabric.dao.entity.League;
+import cn.aberic.fabric.dao.entity.Org;
 
 import java.util.List;
 
@@ -42,4 +42,6 @@ public interface OrgService {
     int count();
 
     int delete(int id);
+
+    List<League> listAllLeague();
 }

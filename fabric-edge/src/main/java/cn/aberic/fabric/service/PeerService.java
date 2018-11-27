@@ -16,7 +16,8 @@
 
 package cn.aberic.fabric.service;
 
-import cn.aberic.fabric.dao.Peer;
+import cn.aberic.fabric.dao.entity.Org;
+import cn.aberic.fabric.dao.entity.Peer;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -27,9 +28,9 @@ import java.util.List;
  */
 public interface PeerService {
     
-    int add(Peer peer, MultipartFile serverCrtFile);
+    int add(Peer peer, MultipartFile serverCrtFile, MultipartFile clientCertFile, MultipartFile clientKeyFile);
 
-    int update(Peer peer, MultipartFile serverCrtFile);
+    int update(Peer peer, MultipartFile serverCrtFile, MultipartFile clientCertFile, MultipartFile clientKeyFile);
 
     List<Peer> listAll();
 
@@ -42,4 +43,10 @@ public interface PeerService {
     int count();
 
     int delete(int id);
+
+    List<Org> listOrgByOrgId(int orgId);
+
+    List<Org> getForPeerAndOrderer();
+
+    Peer resetPeer(Peer peer);
 }

@@ -16,7 +16,7 @@
 
 package cn.aberic.fabric.service;
 
-import cn.aberic.fabric.dao.Channel;
+import cn.aberic.fabric.dao.entity.Channel;
 
 import java.util.List;
 
@@ -29,6 +29,8 @@ public interface ChannelService {
     int add(Channel channel);
 
     int update(Channel channel);
+
+    int updateHeight(int id, int height);
 
     List<Channel> listAll();
 

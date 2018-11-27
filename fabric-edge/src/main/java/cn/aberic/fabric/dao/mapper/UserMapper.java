@@ -16,7 +16,7 @@
 
 package cn.aberic.fabric.dao.mapper;
 
-import cn.aberic.fabric.dao.User;
+import cn.aberic.fabric.dao.entity.User;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -28,25 +28,42 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
 
-    @Insert("insert into user  (username,password) values (#{u.username},#{u.password})")
+    @Insert("insert into fns_user (username,password,role_id,date) values (#{u.username},#{u.password},#{u.roleId},#{u.date})")
     int add(@Param("u")User user);
 
-    @Update("update user set password=#{u.password} where username=#{u.username}")
+    @Update("update fns_user set password=#{u.password} where username=#{u.username}")
     int update(@Param("u")User user);
 
-    @Select("select rowid,username,password from user where username=#{username}")
+    @Update("update fns_user set password=#{u.password},role_id=#{u.roleId} where id=#{u.id}")
+    int upgrade(@Param("u")User user);
+
+    @Update("update fns_user set password=#{u.password} where id=#{u.id}")
+    int updatePassword(@Param("u")User user);
+
+    @Update("update fns_user set role_id=#{u.roleId} where id=#{u.id}")
+    int updateRole(@Param("u")User user);
+
+    @Update("update fns_user set role_id=#{u.roleId} where id=#{u.id}")
+    int setRole(@Param("u")User user);
+
+    @Delete("delete from fns_user where id=#{id}")
+    int delete(@Param("id") int id);
+
+    @Select("select id,username,password,role_id,date from fns_user where username=#{username}")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "username", column = "username"),
-            @Result(property = "password", column = "password")
+            @Result(property = "roleId", column = "role_id")
     })
     User get(@Param("username") String username);
 
-    @Select("select rowid,username,password from user")
+    @Select("select id,username,password,role_id,date from fns_user where id=#{id}")
     @Results({
-            @Result(property = "id", column = "rowid"),
-            @Result(property = "username", column = "username"),
-            @Result(property = "password", column = "password")
+            @Result(property = "roleId", column = "role_id")
+    })
+    User getById(@Param("id") int id);
+
+    @Select("select id,username,password,role_id,date from fns_user")
+    @Results({
+            @Result(property = "roleId", column = "role_id")
     })
     List<User> listAll();
 

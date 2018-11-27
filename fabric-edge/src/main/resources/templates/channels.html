@@ -58,6 +58,8 @@
                                     <tr>
                                         <th class="w-1">ID</th>
                                         <th th:text="#{name}"></th>
+                                        <th th:text="#{league_name}"></th>
+                                        <th th:text="#{org_name}"></th>
                                         <th th:text="#{peer_name}"></th>
                                         <th th:text="#{chaincode_count}"></th>
                                         <th th:text="#{date}"></th>
@@ -68,6 +70,8 @@
                                     <tr th:each="channel : ${channels}">
                                         <td th:text="${channel.id}">ID</td>
                                         <td th:text="${channel.name}">节点名称</td>
+                                        <td th:text="${channel.leagueName}">联盟名称</td>
+                                        <td th:text="${channel.orgName}">组织名称</td>
                                         <td th:text="${channel.peerName}">组织名称</td>
                                         <td th:text="${channel.chaincodeCount}">通道数量</td>
                                         <td th:text="${channel.date}">时间</td>
@@ -75,6 +79,7 @@
                                             <a th:href="@{/channel/edit(id=${channel.id})}"
                                                class="btn btn-secondary btn-sm" th:text="#{edit}"></a>
                                             <a th:href="@{/channel/delete(id=${channel.id})}"
+                                               onclick="return doDelete()"
                                                class="btn btn-secondary btn-sm" th:text="#{delete}"></a>
                                         </td>
                                     </tr>
@@ -90,6 +95,12 @@
     <div th:include="fns_footer :: footer"></div>
 </div>
 <script src="https://unpkg.com/ionicons@4.2.4/dist/ionicons.js"></script>
+<script>
+    function doDelete(){
+        var c = confirm("是否删除？")
+        return c
+    }
+</script>
 </body>
 
 </html>

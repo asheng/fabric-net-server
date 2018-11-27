@@ -16,14 +16,18 @@
 
 package cn.aberic.fabric.runner;
 
-import cn.aberic.fabric.dao.User;
+import cn.aberic.fabric.dao.entity.Role;
+import cn.aberic.fabric.dao.entity.User;
 import cn.aberic.fabric.service.UserService;
 import cn.aberic.fabric.utils.MD5Util;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 作者：Aberic on 2018/6/22 21:36
@@ -35,13 +39,16 @@ public class FabricEdgeRunner implements ApplicationRunner {
     @Resource
     private UserService userService;
 
-//    @Value("${username}")
-//    private String username;
-//    @Value("${password}")
-//    private String password;
+    @Value("${username}")
+    private String username;
+    @Value("${password}")
+    private String password;
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!hadSuperAdmin()) {
+            initRola();
+        }
         addUser();
         System.out.println();
         System.out.println(" _____   _   _   ____    ");
@@ -55,12 +62,27 @@ public class FabricEdgeRunner implements ApplicationRunner {
         System.out.println("================================= read logs ================================ ");
     }
 
+    private boolean hadSuperAdmin() {
+        return null != userService.getRoleById(1);
+    }
+
+    private void initRola() {
+        Role roleSuperAdmin = new Role(1, "超级管理员");
+        Role roleAdmin = new Role(2, "管理员");
+        Role roleMember = new Role(8, "普通会员");
+        List<Role> roles = new ArrayList<>();
+        roles.add(roleSuperAdmin);
+        roles.add(roleAdmin);
+        roles.add(roleMember);
+        userService.addRoleList(roles);
+    }
+
     private void addUser() {
         User user = new User();
-//        user.setUsername(username);
-//        user.setPassword(MD5Util.md5(password));
-        user.setUsername(System.getenv("USERNAME"));
-        user.setPassword(MD5Util.md5(System.getenv("PASSWORD")));
+        user.setUsername(username);
+        user.setPassword(MD5Util.md5(password));
+        user.setRoleId(Role.SUPER_ADMIN);
         userService.init(user);
     }
+
 }

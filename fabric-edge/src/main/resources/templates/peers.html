@@ -60,6 +60,7 @@
                                         <th th:text="#{name}"></th>
                                         <th th:text="#{location}"></th>
                                         <th th:text="#{peer_event_hub_location}"></th>
+                                        <th th:text="#{league_name}"></th>
                                         <th th:text="#{org_name}"></th>
                                         <th th:text="#{channel_count}"></th>
                                         <th th:text="#{date}"></th>
@@ -72,6 +73,7 @@
                                         <td th:text="${peer.name}">节点列表</td>
                                         <td th:text="${peer.location}">Location</td>
                                         <td th:text="${peer.eventHubLocation}">Event Hub Location</td>
+                                        <td th:text="${peer.leagueName}">联盟名称</td>
                                         <td th:text="${peer.orgName}">组织名称</td>
                                         <td th:text="${peer.channelCount}">通道数量</td>
                                         <td th:text="${peer.date}">时间</td>
@@ -79,6 +81,7 @@
                                             <a th:href="@{/peer/edit(id=${peer.id})}"
                                                class="btn btn-secondary btn-sm" th:text="#{edit}"></a>
                                             <a th:href="@{/peer/delete(id=${peer.id})}"
+                                               onclick="return doDelete()"
                                                class="btn btn-secondary btn-sm" th:text="#{delete}"></a>
                                         </td>
                                     </tr>
@@ -94,6 +97,12 @@
     <div th:include="fns_footer :: footer"></div>
 </div>
 <script src="https://unpkg.com/ionicons@4.2.4/dist/ionicons.js"></script>
+<script>
+    function doDelete(){
+        var c = confirm("是否删除？")
+        return c
+    }
+</script>
 </body>
 
 </html>

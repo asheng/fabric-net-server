@@ -16,26 +16,36 @@
 
 package cn.aberic.fabric.bean;
 
+import cn.aberic.fabric.dao.entity.Channel;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
- * 描述：
- *
- * @author : Aberic 【2018-07-05 17:02】
+ * 作者：Aberic on 2018/8/10 21:29
+ * 邮箱：abericyang@gmail.com
  */
 @Setter
 @Getter
-public class App {
+public class Home {
 
-    private int id;
-    private String name;
-    private String key;
-    private int chaincodeId;
-    private String createDate;
-    private String modifyDate;
-    private String privateKey;
-    private String publicKey;
-    private boolean active;
-
+    int leagueCount;
+    int orgCount;
+    int ordererCount;
+    int peerCount;
+    int caCount;
+    int channelCount;
+    int chaincodeCount;
+    int appCount;
+    List<Channel> channels;
+    List<Block> blocks;
+    List<ChannelPercent> channelPercents;
+    List<ChannelBlockList> channelBlockLists;
+    List<cn.aberic.fabric.dao.entity.Block> blockDaos;
+    DayStatistics dayStatistics;
+    Platform platform;
+    Curve dayBlocks;
+    Curve dayTxs;
+    Curve dayRWs;
 }

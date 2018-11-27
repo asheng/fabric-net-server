@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018. Aberic - aberic@qq.com - All Rights Reserved.
+ * Copyright (c) 2018. Aberic - All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,22 @@
  * limitations under the License.
  */
 
-package cn.aberic.fabric.dao;
+package cn.aberic.fabric.bean;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 /**
- * 作者：Aberic on 2018/6/27 21:15
- * 邮箱：abericyang@gmail.com
+ * 描述：
+ *
+ * @author : Aberic 【2018-08-10 16:54】
  */
 @Setter
 @Getter
-@ToString
-public class Peer {
+public class ChannelPercent {
 
-    private int id; // required
-    private String name; // required
-    private String location; // required
-    private String eventHubLocation; // required
-    private int orgId; // required
-    private String serverCrtPath;
-    private String orgName; // required
-    private String leagueName; // optional
-    private String date; // required
-    private int channelCount; // required
+    private String name;
+    private int blockPercent;
+    private int txPercent;
+
 }

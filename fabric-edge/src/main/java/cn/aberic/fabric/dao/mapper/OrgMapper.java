@@ -16,7 +16,7 @@
 
 package cn.aberic.fabric.dao.mapper;
 
-import cn.aberic.fabric.dao.Org;
+import cn.aberic.fabric.dao.entity.Org;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -28,29 +28,29 @@ import java.util.List;
 @Mapper
 public interface OrgMapper {
 
-    @Insert("insert into org (msp_id,tls,league_id,date)" +
+    @Insert("insert into fns_org (msp_id,tls,league_id,date)" +
             "values (#{o.mspId},#{o.tls},#{o.leagueId},#{o.date})")
     int add(@Param("o") Org org);
 
-    @Update("update org set tls=#{o.tls}, msp_id=#{o.mspId}, league_id=#{o.leagueId}" +
-            " where rowid=#{o.id}")
+    @Update("update fns_org set tls=#{o.tls}, msp_id=#{o.mspId}, league_id=#{o.leagueId}" +
+            " where id=#{o.id}")
     int update(@Param("o") Org org);
 
-    @Select("select count(msp_id) from org where league_id=#{id}")
+    @Select("select count(msp_id) from fns_org where league_id=#{id}")
     int count(@Param("id") int id);
 
-    @Select("select count(msp_id) from org")
+    @Select("select count(msp_id) from fns_org")
     int countAll();
 
-    @Delete("delete from org where rowid=#{id}")
+    @Delete("delete from fns_org where id=#{id}")
     int delete(@Param("id") int id);
 
-    @Delete("delete from org where league_id=#{leagueId}")
+    @Delete("delete from fns_org where league_id=#{leagueId}")
     int deleteAll(@Param("leagueId") int leagueId);
 
-    @Select("select rowid,tls,msp_id,league_id,date from org where rowid=#{id}")
+    @Select("select id,tls,msp_id,league_id,date from fns_org where id=#{id}")
     @Results({
-            @Result(property = "id", column = "rowid"),
+            @Result(property = "id", column = "id"),
             @Result(property = "tls", column = "tls"),
             @Result(property = "mspId", column = "msp_id"),
             @Result(property = "leagueId", column = "league_id"),
@@ -58,9 +58,9 @@ public interface OrgMapper {
     })
     Org get(@Param("id") int id);
 
-    @Select("select rowid,tls,msp_id,league_id,date from org where league_id=#{id}")
+    @Select("select id,tls,msp_id,league_id,date from fns_org where league_id=#{id}")
     @Results({
-            @Result(property = "id", column = "rowid"),
+            @Result(property = "id", column = "id"),
             @Result(property = "tls", column = "tls"),
             @Result(property = "mspId", column = "msp_id"),
             @Result(property = "leagueId", column = "league_id"),
@@ -68,9 +68,9 @@ public interface OrgMapper {
     })
     List<Org> list(@Param("id") int id);
 
-    @Select("select rowid,tls,msp_id,league_id,date from org")
+    @Select("select id,tls,msp_id,league_id,date from fns_org")
     @Results({
-            @Result(property = "id", column = "rowid"),
+            @Result(property = "id", column = "id"),
             @Result(property = "tls", column = "tls"),
             @Result(property = "mspId", column = "msp_id"),
             @Result(property = "leagueId", column = "league_id"),

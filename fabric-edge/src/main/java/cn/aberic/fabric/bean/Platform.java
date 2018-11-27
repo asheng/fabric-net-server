@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018. Aberic - aberic@qq.com - All Rights Reserved.
+ * Copyright (c) 2018. Aberic - All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package cn.aberic.fabric.dao;
+package cn.aberic.fabric.bean;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 /**
- * 作者：Aberic on 2018/6/27 21:15
- * 邮箱：abericyang@gmail.com
+ * 描述：
+ *
+ * @author : Aberic 【2018-08-10 17:43】
  */
 @Setter
 @Getter
-@ToString
-public class Org {
+public class Platform {
 
-    private int id; // required
-    private boolean tls; // required
-    private String mspId; // required
-    private int leagueId; // required
-    private String leagueName; // required
-    private String date; // required
-    private int peerCount; // required
-    private int ordererCount; // required
+    private int blockCount;
+    private int txCount;
+    private int rwSetCount;
+
 }

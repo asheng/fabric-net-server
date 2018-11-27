@@ -16,7 +16,7 @@
 
 package cn.aberic.fabric.dao.mapper;
 
-import cn.aberic.fabric.dao.League;
+import cn.aberic.fabric.dao.entity.League;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -28,30 +28,28 @@ import java.util.List;
 @Mapper
 public interface LeagueMapper {
 
-    @Insert("insert into league  (name,date,version) values (#{l.name},#{l.date},#{l.version})")
+    @Insert("insert into fns_league  (name,date) values (#{l.name},#{l.date})")
     int add(@Param("l") League league);
 
-    @Update("update league set name=#{l.name},version=#{l.version} where rowid=#{l.id}")
+    @Update("update fns_league set name=#{l.name} where id=#{l.id}")
     int update(@Param("l") League league);
 
-    @Delete("delete from league where rowid=#{id}")
+    @Delete("delete from fns_league where id=#{id}")
     int delete(@Param("id") int id);
 
-    @Select("select rowid,name,date,version from league where rowid=#{id}")
+    @Select("select id,name,date from fns_league where id=#{id}")
     @Results({
-            @Result(property = "id", column = "rowid"),
+            @Result(property = "id", column = "id"),
             @Result(property = "name", column = "name"),
-            @Result(property = "date", column = "date"),
-            @Result(property = "version", column = "version")
+            @Result(property = "date", column = "date")
     })
     League get(@Param("id") int id);
 
-    @Select("select rowid,name,date,version from league")
+    @Select("select id,name,date from fns_league")
     @Results({
-            @Result(property = "id", column = "rowid"),
+            @Result(property = "id", column = "id"),
             @Result(property = "name", column = "name"),
-            @Result(property = "date", column = "date"),
-            @Result(property = "version", column = "version")
+            @Result(property = "date", column = "date")
     })
     List<League> listAll();
 

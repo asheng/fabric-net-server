@@ -68,27 +68,30 @@ class IntermediateChannel {
         client.setUserContext(org.getUser(org.getUsername()));
         // client.setUserContext(org.getUser());
         channel = client.newChannel(channelName);
-        log.debug("Get Chain " + channelName);
+        log.info("Get Chain " + channelName);
 
         int sizeOrderers = org.getOrderers().size();
         for (int i = 0; i < sizeOrderers; i++) {
             Properties ordererProperties = new Properties();
             if (org.openTLS()) {
                 File ordererCert = new File(org.getOrderers().get(i).getServerCrtPath());
+                File ordererUserClientCert = new File(org.getOrderers().get(i).getClientCertPath());
+                File ordererUserClientKey = new File(org.getOrderers().get(i).getClientKeyPath());
                 if (!ordererCert.exists()) {
                     throw new RuntimeException(
                             String.format("Missing cert file for: %s. Could not find at location: %s", org.getOrderers().get(i).getOrdererName(), ordererCert.getAbsolutePath()));
                 }
                 ordererProperties.setProperty("pemFile", ordererCert.getAbsolutePath());
+                ordererProperties.setProperty("clientCertFile", ordererUserClientCert.getAbsolutePath());
+                ordererProperties.setProperty("clientKeyFile", ordererUserClientKey.getAbsolutePath());
             }
             ordererProperties.setProperty("hostnameOverride", org.getOrderers().get(i).getOrdererName());
             ordererProperties.setProperty("sslProvider", "openSSL");
             ordererProperties.setProperty("negotiationType", "TLS");
-            ordererProperties.put("grpc.ManagedChannelBuilderOption.maxInboundMessageSize", 9000000);
             // 设置keepAlive以避免在不活跃的http2连接上超时的例子。在5分钟内，需要对服务器端进行更改，以接受更快的ping速率。
             ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTime", new Object[]{5L, TimeUnit.MINUTES});
             ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveTimeout", new Object[]{8L, TimeUnit.SECONDS});
-            ordererProperties.setProperty("ordererWaitTimeMilliSecs", "300000");
+            ordererProperties.put("grpc.NettyChannelBuilderOption.keepAliveWithoutCalls", new Object[] {true});
             channel.addOrderer(
                     client.newOrderer(org.getOrderers().get(i).getOrdererName(), org.getOrderers().get(i).getOrdererLocation(), ordererProperties));
         }
@@ -98,11 +101,15 @@ class IntermediateChannel {
             Properties peerProperties = new Properties();
             if (org.openTLS()) {
                 File peerCert = new File(org.getPeers().get(i).getServerCrtPath());
+                File peerUserClientCert = new File(org.getPeers().get(i).getClientCertPath());
+                File peerUserClientKey = new File(org.getPeers().get(i).getClientKeyPath());
                 if (!peerCert.exists()) {
                     throw new RuntimeException(
                             String.format("Missing cert file for: %s. Could not find at location: %s", org.getPeers().get(i).getPeerName(), peerCert.getAbsolutePath()));
                 }
                 peerProperties.setProperty("pemFile", peerCert.getAbsolutePath());
+                peerProperties.setProperty("clientCertFile", peerUserClientCert.getAbsolutePath());
+                peerProperties.setProperty("clientKeyFile", peerUserClientKey.getAbsolutePath());
             }
             // ret.setProperty("trustServerCertificate", "true"); //testing
             // environment only NOT FOR PRODUCTION!
@@ -110,7 +117,7 @@ class IntermediateChannel {
             peerProperties.setProperty("sslProvider", "openSSL");
             peerProperties.setProperty("negotiationType", "TLS");
             // 在grpc的NettyChannelBuilder上设置特定选项
-            peerProperties.put("grpc.ManagedChannelBuilderOption.maxInboundMessageSize", 9000000);
+            peerProperties.put("grpc.NettyChannelBuilderOption.maxInboundMessageSize", 9000000);
             // 如果未加入频道，该方法执行加入。如果已加入频道，则执行下一行方面新增Peer
             // channel.joinPeer(client.newPeer(peers.get().get(i).getPeerName(), fabricOrg.getPeerLocation(peers.get().get(i).getPeerName()), peerProperties));
             channel.addPeer(client.newPeer(org.getPeers().get(i).getPeerName(), org.getPeers().get(i).getPeerLocation(), peerProperties));
@@ -119,10 +126,11 @@ class IntermediateChannel {
             }
         }
 
-        log.debug("channel.isInitialized() = " + channel.isInitialized());
+        log.info("channel.isInitialized() = " + channel.isInitialized());
         if (!channel.isInitialized()) {
             channel.initialize();
         }
+        log.info(String.format("channel.isInitialized() = %s", channel.isInitialized()));
         if (null != org.getBlockListener()) {
             // channel.registerBlockListener(org.getBlockListener());
             channel.registerBlockListener(blockEvent -> {

@@ -100,22 +100,22 @@ class FabricStore {
      * @param certificatePath 带有节点的X.509证书的PEM文件——certificate路径
      * @return user 用户
      */
-    IntermediateUser getMember(String name, String mspId, String skPath, String certificatePath) throws IOException {
+    IntermediateUser getMember(String leagueName, String orgName, String peerName, String name, String mspId, String skPath, String certificatePath) throws IOException {
         // 尝试从缓存中获取User状态
-        IntermediateUser user = members.get(IntermediateUser.getKeyForFabricStoreName(name, skPath, certificatePath));
+        IntermediateUser user = members.get(IntermediateUser.getKeyForFabricStoreName(leagueName, orgName, peerName, name));
         if (null != user) {
             System.out.println("尝试从缓存中获取User状态 User = " + user);
             return user;
         }
         // 创建User，并尝试从键值存储中恢复它的状态(如果找到的话)
-        user = new IntermediateUser(name, skPath, certificatePath);
+        user = new IntermediateUser(leagueName, orgName, peerName, name, skPath, certificatePath);
         user.setFabricStore(this);
         user.setMspId(mspId);
-        String certificate = new String(IOUtils.toByteArray(new FileInputStream(new File(certificatePath))), "UTF-8");
-        PrivateKey privateKey = getPrivateKeyFromBytes(IOUtils.toByteArray(new FileInputStream(new File(skPath))));
-        user.setEnrollment(new StoreEnrollment(privateKey, certificate));
+        // String certificate = new String(IOUtils.toByteArray(new FileInputStream(new File(certificatePath))), "UTF-8");
+        PrivateKey privateKey = getPrivateKeyFromBytes(skPath);
+        user.setEnrollment(new StoreEnrollment(privateKey, certificatePath));
         user.saveState();
-        members.put(IntermediateUser.getKeyForFabricStoreName(name, skPath, certificatePath), user);
+        members.put(IntermediateUser.getKeyForFabricStoreName(leagueName, orgName, peerName, name), user);
         return user;
     }
 
@@ -125,8 +125,8 @@ class FabricStore {
      * @param data 字节数组
      * @return 私钥
      */
-    private PrivateKey getPrivateKeyFromBytes(byte[] data) throws IOException {
-        final Reader pemReader = new StringReader(new String(data));
+    private PrivateKey getPrivateKeyFromBytes(String data) throws IOException {
+        final Reader pemReader = new StringReader(data);
         final PrivateKeyInfo pemPair;
         try (PEMParser pemParser = new PEMParser(pemReader)) {
             pemPair = (PrivateKeyInfo) pemParser.readObject();

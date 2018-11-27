@@ -16,10 +16,10 @@
 
 package cn.aberic.fabric.utils;
 
-import cn.aberic.fabric.dao.Chaincode;
-import cn.aberic.fabric.dao.Channel;
-import cn.aberic.fabric.dao.Org;
-import cn.aberic.fabric.dao.Peer;
+import cn.aberic.fabric.dao.entity.Chaincode;
+import cn.aberic.fabric.dao.entity.Channel;
+import cn.aberic.fabric.dao.entity.Org;
+import cn.aberic.fabric.dao.entity.Peer;
 import cn.aberic.fabric.dao.mapper.*;
 
 import java.util.List;
@@ -45,39 +45,58 @@ public class DeleteUtil {
 
     public int deleteLeague(int leagueId, LeagueMapper leagueMapper, OrgMapper orgMapper,
                             OrdererMapper ordererMapper, PeerMapper peerMapper, CAMapper caMapper,
-                            ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper, AppMapper appMapper) {
+                            ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper, AppMapper appMapper, BlockMapper blockMapper) {
         List<Org> orgs = orgMapper.list(leagueId);
-        for (Org org : orgs) {
-            deleteOrg(org.getId(), orgMapper, ordererMapper, peerMapper, caMapper, channelMapper, chaincodeMapper, appMapper);
+        if (orgs.size() == 0) {
+            CacheUtil.removeHome();
+        } else {
+            for (Org org : orgs) {
+                deleteOrg(org.getId(), orgMapper, ordererMapper, peerMapper, caMapper, channelMapper, chaincodeMapper, appMapper, blockMapper);
+            }
         }
         return leagueMapper.delete(leagueId);
     }
 
     public int deleteOrg(int orgId, OrgMapper orgMapper, OrdererMapper ordererMapper,
                          PeerMapper peerMapper, CAMapper caMapper, ChannelMapper channelMapper,
-                         ChaincodeMapper chaincodeMapper, AppMapper appMapper) {
+                         ChaincodeMapper chaincodeMapper, AppMapper appMapper, BlockMapper blockMapper) {
         List<Peer> peers = peerMapper.list(orgId);
-        for (Peer peer : peers) {
-            deletePeer(peer.getId(), peerMapper, caMapper, channelMapper, chaincodeMapper, appMapper);
+        if (peers.size() == 0) {
+            CacheUtil.removeHome();
+        } else {
+            for (Peer peer : peers) {
+                deletePeer(peer.getId(), peerMapper, caMapper, channelMapper, chaincodeMapper, appMapper, blockMapper);
+            }
         }
         ordererMapper.deleteAll(orgId);
         return orgMapper.delete(orgId);
     }
 
     public int deletePeer(int peerId, PeerMapper peerMapper, CAMapper caMapper, ChannelMapper channelMapper,
-                          ChaincodeMapper chaincodeMapper, AppMapper appMapper) {
+                          ChaincodeMapper chaincodeMapper, AppMapper appMapper, BlockMapper blockMapper) {
         List<Channel> channels = channelMapper.list(peerId);
-        for (Channel channel : channels) {
-            deleteChannel(channel.getId(), channelMapper, chaincodeMapper, appMapper);
+        if (channels.size() == 0) {
+            CacheUtil.removeHome();
+        } else {
+            for (Channel channel : channels) {
+                deleteChannel(channel.getId(), channelMapper, chaincodeMapper, appMapper, blockMapper);
+            }
         }
         caMapper.deleteAll(peerId);
         return peerMapper.delete(peerId);
     }
 
-    public int deleteChannel(int channelId, ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper, AppMapper appMapper) {
+    public int deleteChannel(int channelId, ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper, AppMapper appMapper, BlockMapper blockMapper) {
+        blockMapper.deleteByChannelId(channelId);
+        BlockUtil.obtain().removeChannel(channelId);
         List<Chaincode> chaincodes = chaincodeMapper.list(channelId);
-        for (Chaincode chaincode : chaincodes) {
-            deleteChaincode(chaincode.getId(), chaincodeMapper, appMapper);
+        if (chaincodes.size() == 0) {
+            FabricHelper.obtain().removeChannelManager(channelId);
+            CacheUtil.removeHome();
+        } else {
+            for (Chaincode chaincode : chaincodes) {
+                deleteChaincode(chaincode.getId(), chaincodeMapper, appMapper);
+            }
         }
         return channelMapper.delete(channelId);
     }
@@ -85,6 +104,7 @@ public class DeleteUtil {
     public int deleteChaincode(int chaincodeId, ChaincodeMapper chaincodeMapper, AppMapper appMapper) {
         appMapper.deleteAll(chaincodeId);
         FabricHelper.obtain().removeChaincodeManager(chaincodeMapper.get(chaincodeId).getCc());
+        CacheUtil.removeHome();
         return chaincodeMapper.delete(chaincodeId);
     }
 

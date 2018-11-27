@@ -16,15 +16,14 @@
 
 package cn.aberic.fabric.service.impl;
 
-import cn.aberic.fabric.bean.App;
-import cn.aberic.fabric.bean.Key;
+import cn.aberic.fabric.dao.entity.App;
 import cn.aberic.fabric.dao.mapper.AppMapper;
 import cn.aberic.fabric.dao.mapper.ChaincodeMapper;
 import cn.aberic.fabric.service.AppService;
 import cn.aberic.fabric.utils.CacheUtil;
 import cn.aberic.fabric.utils.DateUtil;
 import cn.aberic.fabric.utils.MathUtil;
-import cn.aberic.fabric.utils.encryption.Utils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -48,25 +47,24 @@ public class AppServiceImpl implements AppService {
         if (null != appMapper.check(app)) {
             return 0;
         }
-        Key key = Utils.obtain().createECCDSAKeyPair();
-        if (null == key) {
-            return 0;
-        }
-        app.setPublicKey(key.getPublicKey());
-        app.setPrivateKey(key.getPrivateKey());
-        app.setKey(MathUtil.getRandom8());
+        app.setAppKey(MathUtil.getRandom8());
         app.setCreateDate(DateUtil.getCurrent("yyyy-MM-dd HH:mm:ss"));
         app.setModifyDate(DateUtil.getCurrent("yyyy-MM-dd HH:mm:ss"));
         if (app.isActive()) {
-            CacheUtil.putString(app.getKey(), chaincodeMapper.get(app.getChaincodeId()).getCc());
+            CacheUtil.putString(app.getAppKey(), chaincodeMapper.get(app.getChaincodeId()).getCc());
         }
         return appMapper.add(app);
     }
 
     @Override
     public int update(App app) {
+        App appTmp = appMapper.get(app.getId());
+        if (!StringUtils.equals(appTmp.getAppKey(), app.getAppKey())) {
+            CacheUtil.removeString(appTmp.getAppKey());
+            CacheUtil.removeAppBool(appTmp.getAppKey());
+        }
         app.setModifyDate(DateUtil.getCurrent("yyyy-MM-dd HH:mm:ss"));
-        CacheUtil.removeAppBool(app.getKey());
+        CacheUtil.removeAppBool(app.getAppKey());
         return appMapper.update(app);
     }
 
@@ -74,19 +72,13 @@ public class AppServiceImpl implements AppService {
     public int updateKey(int id) {
         App app = new App();
         app.setId(id);
-        CacheUtil.removeString(appMapper.get(id).getKey());
-        app.setKey(MathUtil.getRandom8());
+        CacheUtil.removeString(appMapper.get(id).getAppKey());
+        app.setAppKey(MathUtil.getRandom8());
         if (app.isActive()) {
-            CacheUtil.putString(app.getKey(), chaincodeMapper.get(app.getChaincodeId()).getCc());
+            CacheUtil.putString(app.getAppKey(), chaincodeMapper.get(app.getChaincodeId()).getCc());
         } else {
-            CacheUtil.removeString(app.getKey());
+            CacheUtil.removeString(app.getAppKey());
         }
-        Key key = Utils.obtain().createECCDSAKeyPair();
-        if (null == key) {
-            return 0;
-        }
-        app.setPublicKey(key.getPublicKey());
-        app.setPrivateKey(key.getPrivateKey());
         return appMapper.updateKey(app);
     }
 

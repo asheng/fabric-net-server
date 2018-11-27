@@ -16,10 +16,10 @@
 
 package cn.aberic.fabric.controller;
 
-import cn.aberic.fabric.dao.Channel;
-import cn.aberic.fabric.dao.League;
-import cn.aberic.fabric.dao.Org;
-import cn.aberic.fabric.dao.Peer;
+import cn.aberic.fabric.dao.entity.Channel;
+import cn.aberic.fabric.dao.entity.League;
+import cn.aberic.fabric.dao.entity.Org;
+import cn.aberic.fabric.dao.entity.Peer;
 import cn.aberic.fabric.service.*;
 import cn.aberic.fabric.utils.SpringUtil;
 import org.springframework.web.bind.annotation.*;
@@ -47,8 +47,6 @@ public class ChannelController {
     private OrgService orgService;
     @Resource
     private LeagueService leagueService;
-    @Resource
-    private ChaincodeService chaincodeService;
 
     @PostMapping(value = "submit")
     public ModelAndView submit(@ModelAttribute Channel channel,
@@ -73,14 +71,7 @@ public class ChannelController {
         modelAndView.addObject("submit", SpringUtil.get("submit"));
         modelAndView.addObject("intent", "add");
         modelAndView.addObject("channel", new Channel());
-        List<Peer> peers = peerService.listAll();
-        for (Peer peer : peers) {
-            Org org = orgService.get(peer.getOrgId());
-            peer.setOrgName(org.getMspId());
-            League league = leagueService.get(org.getLeagueId());
-            peer.setLeagueName(league.getName());
-        }
-        modelAndView.addObject("peers", peers);
+        modelAndView.addObject("peers", peerService.listAll());
         return modelAndView;
     }
 
@@ -114,12 +105,7 @@ public class ChannelController {
     @GetMapping(value = "list")
     public ModelAndView list() {
         ModelAndView modelAndView = new ModelAndView("channels");
-        List<Channel> channels = channelService.listAll();
-        for (Channel channel : channels) {
-            channel.setPeerName(peerService.get(channel.getPeerId()).getName());
-            channel.setChaincodeCount(chaincodeService.countById(channel.getId()));
-        }
-        modelAndView.addObject("channels", channels);
+        modelAndView.addObject("channels", channelService.listAll());
         return modelAndView;
     }
 

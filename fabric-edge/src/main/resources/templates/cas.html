@@ -74,6 +74,8 @@
                                     <tr>
                                         <th class="w-1">ID</th>
                                         <th th:text="#{name}"></th>
+                                        <th th:text="#{league_name}"></th>
+                                        <th th:text="#{org_name}"></th>
                                         <th th:text="#{peer_name}"></th>
                                         <th th:text="#{date}"></th>
                                         <th th:text="#{operate}"></th>
@@ -83,12 +85,15 @@
                                     <tr th:each="ca : ${cas}">
                                         <td th:text="${ca.id}">ID</td>
                                         <td th:text="${ca.name}">CA名称</td>
+                                        <td th:text="${ca.leagueName}">联盟名称</td>
+                                        <td th:text="${ca.orgName}">组织名称</td>
                                         <td th:text="${ca.peerName}">节点名称</td>
                                         <td th:text="${ca.date}">时间</td>
                                         <td>
                                             <a th:href="@{/ca/edit(id=${ca.id})}"
                                                class="btn btn-secondary btn-sm" th:text="#{edit}"></a>
                                             <a th:href="@{/ca/delete(id=${ca.id})}"
+                                               onclick="return doDelete()"
                                                class="btn btn-secondary btn-sm" th:text="#{delete}"></a>
                                         </td>
                                     </tr>
@@ -104,6 +109,12 @@
     <div th:include="fns_footer :: footer"></div>
 </div>
 <script src="https://unpkg.com/ionicons@4.2.4/dist/ionicons.js"></script>
+<script>
+    function doDelete(){
+        var c = confirm("是否删除？")
+        return c
+    }
+</script>
 </body>
 
 </html>

@@ -16,9 +16,11 @@
 
 package cn.aberic.fabric.service.impl;
 
-import cn.aberic.fabric.dao.Org;
+import cn.aberic.fabric.dao.entity.League;
+import cn.aberic.fabric.dao.entity.Org;
 import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.service.OrgService;
+import cn.aberic.fabric.utils.CacheUtil;
 import cn.aberic.fabric.utils.DateUtil;
 import cn.aberic.fabric.utils.DeleteUtil;
 import cn.aberic.fabric.utils.FabricHelper;
@@ -26,11 +28,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service("orgService")
 public class OrgServiceImpl implements OrgService {
 
+    @Resource
+    private LeagueMapper leagueMapper;
     @Resource
     private OrgMapper orgMapper;
     @Resource
@@ -45,6 +50,8 @@ public class OrgServiceImpl implements OrgService {
     private ChaincodeMapper chaincodeMapper;
     @Resource
     private AppMapper appMapper;
+    @Resource
+    private BlockMapper blockMapper;
 
 
     @Override
@@ -53,18 +60,26 @@ public class OrgServiceImpl implements OrgService {
             return 0;
         }
         org.setDate(DateUtil.getCurrent("yyyy-MM-dd"));
+        CacheUtil.removeHome();
         return orgMapper.add(org);
     }
 
     @Override
     public int update(Org org) {
         FabricHelper.obtain().removeChaincodeManager(peerMapper.list(org.getId()), channelMapper, chaincodeMapper);
+        CacheUtil.removeHome();
         return orgMapper.update(org);
     }
 
     @Override
     public List<Org> listAll() {
-        return orgMapper.listAll();
+        List<Org> orgs = new ArrayList<>(orgMapper.listAll());
+        for (Org org : orgs) {
+            org.setOrdererCount(ordererMapper.count(org.getId()));
+            org.setPeerCount(peerMapper.count(org.getId()));
+            org.setLeagueName(leagueMapper.get(org.getLeagueId()).getName());
+        }
+        return orgs;
     }
 
     @Override
@@ -89,7 +104,12 @@ public class OrgServiceImpl implements OrgService {
 
     @Override
     public int delete(int id) {
-        return DeleteUtil.obtain().deleteOrg(id, orgMapper, ordererMapper, peerMapper, caMapper, channelMapper, chaincodeMapper, appMapper);
+        return DeleteUtil.obtain().deleteOrg(id, orgMapper, ordererMapper, peerMapper, caMapper, channelMapper, chaincodeMapper, appMapper, blockMapper);
+    }
+
+    @Override
+    public List<League> listAllLeague() {
+        return leagueMapper.listAll();
     }
 
 }

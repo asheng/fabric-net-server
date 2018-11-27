@@ -16,11 +16,12 @@
 
 package cn.aberic.fabric.service.impl;
 
-import cn.aberic.fabric.dao.Channel;
-import cn.aberic.fabric.dao.mapper.AppMapper;
-import cn.aberic.fabric.dao.mapper.ChaincodeMapper;
-import cn.aberic.fabric.dao.mapper.ChannelMapper;
+import cn.aberic.fabric.dao.entity.Channel;
+import cn.aberic.fabric.dao.entity.Org;
+import cn.aberic.fabric.dao.entity.Peer;
+import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.service.ChannelService;
+import cn.aberic.fabric.utils.CacheUtil;
 import cn.aberic.fabric.utils.DateUtil;
 import cn.aberic.fabric.utils.DeleteUtil;
 import cn.aberic.fabric.utils.FabricHelper;
@@ -36,11 +37,19 @@ import java.util.List;
 public class ChannelServiceImpl implements ChannelService {
 
     @Resource
+    private LeagueMapper leagueMapper;
+    @Resource
+    private OrgMapper orgMapper;
+    @Resource
+    private PeerMapper peerMapper;
+    @Resource
     private ChannelMapper channelMapper;
     @Resource
     private ChaincodeMapper chaincodeMapper;
     @Resource
     private AppMapper appMapper;
+    @Resource
+    private BlockMapper blockMapper;
 
     @Override
     public int add(Channel channel) {
@@ -52,19 +61,42 @@ public class ChannelServiceImpl implements ChannelService {
             log.debug("had the same channel in this peer");
             return 0;
         }
+        if (!channel.isBlockListener()) {
+            channel.setCallbackLocation("");
+        }
         channel.setDate(DateUtil.getCurrent("yyyy-MM-dd"));
+        CacheUtil.removeHome();
         return channelMapper.add(channel);
     }
 
     @Override
     public int update(Channel channel) {
         FabricHelper.obtain().removeChaincodeManager(chaincodeMapper.list(channel.getId()));
+        CacheUtil.removeHome();
+        blockMapper.deleteByChannelId(channel.getId());
+        if (!channel.isBlockListener()) {
+            channel.setCallbackLocation("");
+        }
         return channelMapper.update(channel);
     }
 
     @Override
+    public int updateHeight(int id, int height) {
+        return channelMapper.updateHeight(id, height);
+    }
+
+    @Override
     public List<Channel> listAll() {
-        return channelMapper.listAll();
+        List<Channel> channels = channelMapper.listAll();
+        for (Channel channel : channels) {
+            Peer peer = peerMapper.get(channel.getPeerId());
+            Org org = orgMapper.get(peer.getOrgId());
+            channel.setLeagueName(leagueMapper.get(org.getLeagueId()).getName());
+            channel.setOrgName(org.getMspId());
+            channel.setPeerName(peer.getName());
+            channel.setChaincodeCount(chaincodeMapper.count(channel.getId()));
+        }
+        return channels;
     }
 
     @Override
@@ -89,6 +121,6 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public int delete(int id) {
-        return DeleteUtil.obtain().deleteChannel(id, channelMapper, chaincodeMapper, appMapper);
+        return DeleteUtil.obtain().deleteChannel(id, channelMapper, chaincodeMapper, appMapper, blockMapper);
     }
 }

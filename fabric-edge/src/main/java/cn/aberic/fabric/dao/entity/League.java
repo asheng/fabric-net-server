@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018. Aberic - aberic@qq.com - All Rights Reserved.
+ * Copyright (c) 2018. Aberic - All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,32 @@
  * limitations under the License.
  */
 
-package cn.aberic.fabric.dao;
+package cn.aberic.fabric.dao.entity;
 
+import com.gitee.sunchenbin.mybatis.actable.annotation.Column;
+import com.gitee.sunchenbin.mybatis.actable.annotation.Table;
+import com.gitee.sunchenbin.mybatis.actable.constants.MySqlTypeConstant;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * 作者：Aberic on 2018/6/27 21:15
+ * 作者：Aberic on 2018/6/27 21:12
  * 邮箱：abericyang@gmail.com
  */
 @Setter
 @Getter
 @ToString
-public class Channel {
+@Table(name = "fns_league")
+public class League {
 
+    @Column(name = "id",type = MySqlTypeConstant.INT,length = 9,isKey = true,isAutoIncrement = true)
     private int id; // required
+    @Column(name = "name",type = MySqlTypeConstant.VARCHAR,length = 256)
     private String name; // required
-    private boolean blockListener; // required
-    private String callbackLocation; // required
-    private int peerId; // required
-    private String date; // optional
-    private String peerName; // optional
-    private String orgName; // optional
-    private String leagueName; // optional
-    private int chaincodeCount; // optional
+    @Column(name = "date",type = MySqlTypeConstant.VARCHAR,length = 14)
+    private String date; // required
+
+    private int orgCount; // required
+
 }

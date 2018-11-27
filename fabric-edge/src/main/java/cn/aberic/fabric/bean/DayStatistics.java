@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package cn.aberic.fabric.service;
+package cn.aberic.fabric.bean;
 
-import cn.aberic.fabric.dao.User;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * 作者：Aberic on 2018/6/27 22:11
- * 邮箱：abericyang@gmail.com
+ * 描述：
+ *
+ * @author : Aberic 【2018-08-10 17:03】
  */
-public interface CommonService {
+@Setter
+@Getter
+public class DayStatistics {
 
-    String login(User user);
+    private int blockCount;
+    private int txCount;
+    private int blockPercent;
+    private int txPercent;
+
 }

@@ -16,7 +16,8 @@
 
 package cn.aberic.fabric.service;
 
-import cn.aberic.fabric.dao.User;
+import cn.aberic.fabric.dao.entity.Role;
+import cn.aberic.fabric.dao.entity.User;
 
 import java.util.List;
 
@@ -30,9 +31,33 @@ public interface UserService {
 
     int add(User user);
 
+    int create(User user);
+
+    int delete(int id);
+
     int update(User user);
+
+    int upgrade(User user);
+
+    int updatePassword(User user);
+
+    int updateRole(User user);
+
+    int setRole(User user);
 
     List<User> listAll();
 
+    List<Role> listRole();
+
     User get(String username);
+
+    User get(int id);
+
+    String login(User user);
+
+    int addRole(Role role);
+
+    int addRoleList(List<Role> roles);
+
+    Role getRoleById(int id);
 }

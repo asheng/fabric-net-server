@@ -18,7 +18,7 @@ package cn.aberic.fabric.service.impl;
 
 import cn.aberic.fabric.base.BaseService;
 import cn.aberic.fabric.bean.State;
-import cn.aberic.fabric.dao.CA;
+import cn.aberic.fabric.dao.entity.CA;
 import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.sdk.FabricManager;
 import cn.aberic.fabric.service.StateService;
@@ -94,17 +94,14 @@ public class StateServiceImpl implements StateService, BaseService {
     private String chaincodeExec(ChainCodeIntent intent, CA ca, String cc, String fcn, String[] argArray) {
         JSONObject jsonObject = null;
         try {
-            FabricManager manager = FabricHelper.obtain().get(orgMapper, channelMapper, chaincodeMapper, ordererMapper, peerMapper,
+            FabricManager manager = FabricHelper.obtain().get(leagueMapper, orgMapper, channelMapper, chaincodeMapper, ordererMapper, peerMapper,
                     ca, cc);
             switch (intent) {
                 case INVOKE:
                     jsonObject = manager.invoke(fcn, argArray);
                     break;
                 case QUERY:
-                    if (StringUtils.isEmpty(CacheUtil.getString(cc))) {
-                        CacheUtil.putString(cc, leagueMapper.get(orgMapper.get(peerMapper.get(ca.getPeerId()).getOrgId()).getLeagueId()).getVersion());
-                    }
-                    jsonObject = manager.query(fcn, argArray, CacheUtil.getString(cc));
+                    jsonObject = manager.query(fcn, argArray);
                     break;
             }
             return jsonObject.toJSONString();

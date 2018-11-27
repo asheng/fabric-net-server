@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
-package cn.aberic.fabric.dao;
+package cn.aberic.fabric.bean;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
+
+import java.util.List;
 
 /**
- * 作者：Aberic on 2018/7/12 21:02
- * 邮箱：abericyang@gmail.com
+ * 描述：
+ *
+ * @author : Aberic 【2018-08-10 17:26】
  */
 @Setter
 @Getter
-@ToString
-public class CA {
+public class ChannelBlockList {
 
-    private int id;
+    private int zeroCount;
     private String name;
-    private String skPath;
-    private String certificatePath;
-    private String flag; // optional
-    private int peerId;
-    private String date; // optional
-    private boolean tls; // required
-    private String peerName; // optional
-    private String orgName; // optional
-    private String leagueName; // optional
+    private List<ChannelBlock> channelBlocks;
 
 }

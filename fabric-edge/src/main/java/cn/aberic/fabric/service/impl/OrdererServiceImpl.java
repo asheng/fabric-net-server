@@ -16,30 +16,33 @@
 
 package cn.aberic.fabric.service.impl;
 
-import cn.aberic.fabric.dao.Orderer;
-import cn.aberic.fabric.dao.mapper.ChaincodeMapper;
-import cn.aberic.fabric.dao.mapper.ChannelMapper;
-import cn.aberic.fabric.dao.mapper.OrdererMapper;
-import cn.aberic.fabric.dao.mapper.PeerMapper;
+import cn.aberic.fabric.dao.entity.League;
+import cn.aberic.fabric.dao.entity.Orderer;
+import cn.aberic.fabric.dao.entity.Org;
+import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.service.OrdererService;
+import cn.aberic.fabric.utils.CacheUtil;
 import cn.aberic.fabric.utils.DateUtil;
 import cn.aberic.fabric.utils.FabricHelper;
 import cn.aberic.fabric.utils.FileUtil;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Service("ordererService")
 public class OrdererServiceImpl implements OrdererService {
 
+    @Resource
+    private LeagueMapper leagueMapper;
+    @Resource
+    private OrgMapper orgMapper;
     @Resource
     private OrdererMapper ordererMapper;
     @Resource
@@ -52,35 +55,47 @@ public class OrdererServiceImpl implements OrdererService {
     private Environment env;
 
     @Override
-    public int add(Orderer orderer, MultipartFile serverCrtFile) {
+    public int add(Orderer orderer, MultipartFile serverCrtFile, MultipartFile clientCertFile, MultipartFile clientKeyFile) {
         if (StringUtils.isEmpty(orderer.getName()) ||
                 StringUtils.isEmpty(orderer.getLocation())) {
-            return 0;
+            throw new RuntimeException("orderer name and location can not be null");
         }
-        if (StringUtils.isNotEmpty(serverCrtFile.getOriginalFilename())) {
-            if (saveFileFail(orderer, serverCrtFile)) {
-                return 0;
+        if (StringUtils.isNotEmpty(serverCrtFile.getOriginalFilename()) &&
+                StringUtils.isNotEmpty(clientCertFile.getOriginalFilename()) &&
+                StringUtils.isNotEmpty(clientKeyFile.getOriginalFilename())) {
+            if (saveFileFail(orderer, serverCrtFile, clientCertFile, clientKeyFile)) {
+                throw new RuntimeException("tls file save fail");
             }
         }
         orderer.setDate(DateUtil.getCurrent("yyyy-MM-dd"));
+        CacheUtil.removeHome();
         return ordererMapper.add(orderer);
     }
 
     @Override
-    public int update(Orderer orderer, MultipartFile serverCrtFile) {
-        FabricHelper.obtain().removeChaincodeManager(peerMapper.list(orderer.getOrgId()), channelMapper, chaincodeMapper);
-        if (null == serverCrtFile) {
+    public int update(Orderer orderer, MultipartFile serverCrtFile, MultipartFile clientCertFile, MultipartFile clientKeyFile) {
+        if (null == serverCrtFile || null == clientCertFile || null == clientKeyFile) {
+            FabricHelper.obtain().removeChaincodeManager(peerMapper.list(orderer.getOrgId()), channelMapper, chaincodeMapper);
+            CacheUtil.removeHome();
             return ordererMapper.updateWithNoFile(orderer);
         }
-        if (saveFileFail(orderer, serverCrtFile)) {
-            return 0;
+        if (saveFileFail(orderer, serverCrtFile, clientCertFile, clientKeyFile)) {
+            throw new RuntimeException("tls file save fail");
         }
+        FabricHelper.obtain().removeChaincodeManager(peerMapper.list(orderer.getOrgId()), channelMapper, chaincodeMapper);
+        CacheUtil.removeHome();
         return ordererMapper.update(orderer);
     }
 
     @Override
     public List<Orderer> listAll() {
-        return ordererMapper.listAll();
+        List<Orderer> orderers = ordererMapper.listAll();
+        for (Orderer orderer : orderers) {
+            Org org = orgMapper.get(orderer.getOrgId());
+            orderer.setLeagueName(leagueMapper.get(org.getLeagueId()).getName());
+            orderer.setOrgName(org.getMspId());
+        }
+        return orderers;
     }
 
     @Override
@@ -105,10 +120,39 @@ public class OrdererServiceImpl implements OrdererService {
 
     @Override
     public int delete(int id) {
+        CacheUtil.removeHome();
         return ordererMapper.delete(id);
     }
 
-    private boolean saveFileFail(Orderer orderer, MultipartFile serverCrtFile) {
+    @Override
+    public List<Org> listOrgById(int orgId) {
+        League league = leagueMapper.get(orgMapper.get(orgId).getLeagueId());
+        List<Org> orgs = orgMapper.list(league.getId());
+        for (Org org : orgs) {
+            org.setLeagueName(league.getName());
+        }
+        return orgs;
+    }
+
+    @Override
+    public List<Org> listAllOrg() {
+        List<Org> orgs = new ArrayList<>(orgMapper.listAll());
+        for (Org org : orgs) {
+            org.setLeagueName(leagueMapper.get(org.getLeagueId()).getName());
+        }
+        return orgs;
+    }
+
+    @Override
+    public Orderer resetOrderer(Orderer orderer) {
+        Org org = orgMapper.get(orderer.getOrgId());
+        League league = leagueMapper.get(org.getLeagueId());
+        orderer.setLeagueName(league.getName());
+        orderer.setOrgName(org.getMspId());
+        return orderer;
+    }
+
+    private boolean saveFileFail(Orderer orderer, MultipartFile serverCrtFile, MultipartFile clientCertFile, MultipartFile clientKeyFile) {
         String ordererTlsPath = String.format("%s%s%s%s%s%s%s%s",
                 env.getProperty("config.dir"),
                 File.separator,
@@ -119,9 +163,13 @@ public class OrdererServiceImpl implements OrdererService {
                 orderer.getName(),
                 File.separator);
         String serverCrtPath = String.format("%s%s", ordererTlsPath, serverCrtFile.getOriginalFilename());
+        String clientCertPath = String.format("%s%s", ordererTlsPath, clientCertFile.getOriginalFilename());
+        String clientKeyPath = String.format("%s%s", ordererTlsPath, clientKeyFile.getOriginalFilename());
         orderer.setServerCrtPath(serverCrtPath);
+        orderer.setClientCertPath(clientCertPath);
+        orderer.setClientKeyPath(clientKeyPath);
         try {
-            FileUtil.save(serverCrtFile, serverCrtPath);
+            FileUtil.save(serverCrtFile, clientCertFile, clientKeyFile, serverCrtPath, clientCertPath, clientKeyPath);
         } catch (IOException e) {
             e.printStackTrace();
             return true;

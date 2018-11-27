@@ -16,7 +16,8 @@
 
 package cn.aberic.fabric.service;
 
-import cn.aberic.fabric.dao.CA;
+import cn.aberic.fabric.dao.entity.CA;
+import cn.aberic.fabric.dao.entity.Peer;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -44,4 +45,10 @@ public interface CAService {
     int count();
 
     int delete(int id);
+
+    List<Peer> getFullPeers();
+
+    List<Peer> getPeersByCA(CA ca);
+
+    List<CA> listFullCA();
 }

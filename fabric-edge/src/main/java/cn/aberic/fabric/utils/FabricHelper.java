@@ -16,7 +16,7 @@
 
 package cn.aberic.fabric.utils;
 
-import cn.aberic.fabric.dao.*;
+import cn.aberic.fabric.dao.entity.*;
 import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.sdk.FabricManager;
 import cn.aberic.fabric.sdk.OrgManager;
@@ -24,9 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 描述：
@@ -37,9 +36,6 @@ import java.util.Map;
 public class FabricHelper {
 
     private static FabricHelper instance;
-
-    private final Map<Integer, FabricManager> channelManagerMap;
-    private final Map<String, FabricManager> chaincodeManagerMap;
 
     public static FabricHelper obtain() {
         if (null == instance) {
@@ -53,8 +49,6 @@ public class FabricHelper {
     }
 
     private FabricHelper() {
-        channelManagerMap = new LinkedHashMap<>();
-        chaincodeManagerMap = new LinkedHashMap<>();
     }
 
     public void removeChaincodeManager(List<Peer> peers, ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper) {
@@ -72,24 +66,24 @@ public class FabricHelper {
 
     public void removeChaincodeManager(List<Chaincode> chaincodes) {
         for (Chaincode chaincode : chaincodes) {
-            chaincodeManagerMap.remove(chaincode.getCc());
+            CacheUtil.removeStringFabric(chaincode.getCc());
         }
     }
 
     public void removeChaincodeManager(String cc) {
-        chaincodeManagerMap.remove(cc);
+        CacheUtil.removeStringFabric(cc);
     }
 
-    private void removeChannelManager(int channelId) {
-        channelManagerMap.remove(channelId);
+    void removeChannelManager(int channelId) {
+        CacheUtil.removeIntegerFabric(channelId);
     }
 
-    public FabricManager get(OrgMapper orgMapper, ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper,
+    public FabricManager get(LeagueMapper leagueMapper, OrgMapper orgMapper, ChannelMapper channelMapper, ChaincodeMapper chaincodeMapper,
                              OrdererMapper ordererMapper, PeerMapper peerMapper, CA ca, String cc) throws Exception {
         // 尝试从缓存中获取fabricManager
-        FabricManager fabricManager = chaincodeManagerMap.get(cc);
+        FabricManager fabricManager = CacheUtil.getStringFabric(cc + ca.getName());
         if (null == fabricManager) { // 如果不存在fabricManager则尝试新建一个并放入缓存
-            synchronized (chaincodeManagerMap) {
+            synchronized (CacheUtil.class) {
                 Chaincode chaincode = chaincodeMapper.getByCC(cc);
                 log.debug(String.format("chaincode = %s", chaincode.toString()));
                 Channel channel = channelMapper.get(chaincode.getChannelId());
@@ -97,50 +91,52 @@ public class FabricHelper {
                 Peer peer = peerMapper.get(channel.getPeerId());
                 log.debug(String.format("peer = %s", peer.toString()));
                 int orgId = peer.getOrgId();
-                List<Peer> peers = peerMapper.list(orgId);
+                List<Peer> peers = new ArrayList<>();
+                peers.add(peer);
                 List<Orderer> orderers = ordererMapper.list(orgId);
                 Org org = orgMapper.get(orgId);
+                League league = leagueMapper.get(org.getLeagueId());
                 log.debug(String.format("org = %s", org.toString()));
                 if (orderers.size() != 0 && peers.size() != 0 && null != ca) {
-                    fabricManager = createFabricManager(org, channel, chaincode, orderers, peers, ca, cc);
-                    chaincodeManagerMap.put(cc, fabricManager);
+                    fabricManager = createFabricManager(league, org, channel, chaincode, orderers, peers, ca, cc);
+                    fabricManager.setUser(league.getName(), org.getMspId(), peer.getName(), ca.getName(), ca.getSk(), ca.getCertificate());
+                    CacheUtil.putStringFabric(cc + ca.getName(), fabricManager);
                 }
             }
         }
-        assert ca != null;
-        assert fabricManager != null;
-        fabricManager.setUser(ca.getName(), ca.getSkPath(), ca.getCertificatePath());
         return fabricManager;
     }
 
-    public FabricManager get(OrgMapper orgMapper, ChannelMapper channelMapper,
+    public FabricManager get(LeagueMapper leagueMapper, OrgMapper orgMapper, ChannelMapper channelMapper,
                              OrdererMapper ordererMapper, PeerMapper peerMapper, CA ca, int channelId) throws Exception {
         // 尝试从缓存中获取fabricManager
-        FabricManager fabricManager = channelManagerMap.get(channelId);
+        FabricManager fabricManager = CacheUtil.getIntegerFabric(channelId);
         if (null == fabricManager) { // 如果不存在fabricManager则尝试新建一个并放入缓存
-            synchronized (channelManagerMap) {
+            synchronized (CacheUtil.class) {
                 Channel channel = channelMapper.get(channelId);
                 log.debug(String.format("channel = %s", channel.toString()));
                 Peer peer = peerMapper.get(channel.getPeerId());
                 log.debug(String.format("peer = %s", peer.toString()));
                 int orgId = peer.getOrgId();
-                List<Peer> peers = peerMapper.list(orgId);
+                List<Peer> peers = new ArrayList<>();
+                peers.add(peerMapper.list(orgId).get(0));
                 List<Orderer> orderers = ordererMapper.list(orgId);
                 Org org = orgMapper.get(orgId);
+                League league = leagueMapper.get(org.getLeagueId());
                 if (orderers.size() != 0 && peers.size() != 0) {
-                    fabricManager = createFabricManager(org, channel, null, orderers, peers, ca, String.valueOf(channelId));
-                    channelManagerMap.put(channelId, fabricManager);
+                    fabricManager = createFabricManager(league, org, channel, null, orderers, peers, ca, String.valueOf(channelId));
+                    CacheUtil.putIntegerFabric(channelId, fabricManager);
                 }
             }
         }
         return fabricManager;
     }
 
-    private FabricManager createFabricManager(Org org, Channel channel, Chaincode chaincode, List<Orderer> orderers, List<Peer> peers, CA ca, String cacheName) throws Exception {
+    private FabricManager createFabricManager(League league, Org org, Channel channel, Chaincode chaincode, List<Orderer> orderers, List<Peer> peers, CA ca, String cacheName) throws Exception {
         OrgManager orgManager = new OrgManager();
         orgManager
                 .init(cacheName, org.getMspId(), org.isTls())
-                .setUser(ca.getName(), ca.getSkPath(), ca.getCertificatePath())
+                .setUser(league.getName(), org.getMspId(), peers.get(0).getName(), ca.getName(), ca.getSk(), ca.getCertificate())
                 .setChannel(channel.getName())
                 .setChainCode(null == chaincode ? "" : chaincode.getName(),
                         null == chaincode ? "" : chaincode.getPath(),
@@ -149,20 +145,21 @@ public class FabricHelper {
                         null == chaincode ? "" : chaincode.getVersion(),
                         null == chaincode ? 0 : chaincode.getProposalWaitTime());
         for (Orderer orderer : orderers) {
-            orgManager.addOrderer(orderer.getName(), orderer.getLocation(), orderer.getServerCrtPath());
+            orgManager.addOrderer(orderer.getName(), orderer.getLocation(), orderer.getServerCrtPath(), orderer.getClientCertPath(), orderer.getClientKeyPath());
         }
         for (Peer peer : peers) {
-            orgManager.addPeer(peer.getName(), peer.getLocation(), peer.getEventHubLocation(), peer.getServerCrtPath());
+            orgManager.addPeer(peer.getName(), peer.getLocation(), peer.getEventHubLocation(), peer.getServerCrtPath(), peer.getClientCertPath(), peer.getClientKeyPath());
         }
-        if (channel.isBlockListener() && StringUtils.isNotEmpty(channel.getCallbackLocation()) && null == chaincode) {
-            orgManager.setBlockListener(jsonObject -> {
-                try {
+        orgManager.setBlockListener(jsonObject -> {
+            try {
+                if (channel.isBlockListener() && StringUtils.isNotEmpty(channel.getCallbackLocation()) && null == chaincode) {
                     HttpUtil.post(channel.getCallbackLocation(), jsonObject.toJSONString());
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-            });
-        }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            BlockUtil.obtain().updataChannelData(channel.getId());
+        });
         if (null != chaincode && chaincode.isChaincodeEventListener() && StringUtils.isNotEmpty(chaincode.getCallbackLocation())
                 && StringUtils.isNotEmpty(chaincode.getEvents())) {
             orgManager.setChaincodeEventListener(chaincode.getEvents(), (handle, jsonObject, eventName, chaincodeId, txId) -> {

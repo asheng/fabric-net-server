@@ -18,13 +18,15 @@ package cn.aberic.fabric.service.impl;
 
 import cn.aberic.fabric.base.BaseService;
 import cn.aberic.fabric.bean.Trace;
-import cn.aberic.fabric.dao.CA;
+import cn.aberic.fabric.dao.entity.CA;
 import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.sdk.FabricManager;
 import cn.aberic.fabric.service.TraceService;
+import cn.aberic.fabric.utils.CacheUtil;
 import cn.aberic.fabric.utils.FabricHelper;
 import cn.aberic.fabric.utils.VerifyUtil;
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
@@ -40,9 +42,12 @@ import java.io.IOException;
  *
  * @author : Aberic 【2018/6/4 15:03】
  */
+@Slf4j
 @Service("traceService")
 public class TraceServiceImpl implements TraceService, BaseService {
 
+    @Resource
+    private LeagueMapper leagueMapper;
     @Resource
     private AppMapper appMapper;
     @Resource
@@ -60,17 +65,17 @@ public class TraceServiceImpl implements TraceService, BaseService {
 
     @Override
     public String queryBlockByTransactionID(Trace trace) {
-        return traceCC(trace, TraceIntent.TRANSACTION, caMapper.getByFlag(trace.getFlag()));
+        return traceCC(trace, TraceIntent.TRANSACTION, CacheUtil.getFlagCA(trace.getFlag(), caMapper));
     }
 
     @Override
     public String queryBlockByHash(Trace trace) {
-        return traceCC(trace, TraceIntent.HASH, caMapper.getByFlag(trace.getFlag()));
+        return traceCC(trace, TraceIntent.HASH, CacheUtil.getFlagCA(trace.getFlag(), caMapper));
     }
 
     @Override
     public String queryBlockByNumber(Trace trace) {
-        return traceCC(trace, TraceIntent.NUMBER, caMapper.getByFlag(trace.getFlag()));
+        return traceCC(trace, TraceIntent.NUMBER, CacheUtil.getFlagCA(trace.getFlag(), caMapper));
     }
 
     @Override
@@ -93,6 +98,16 @@ public class TraceServiceImpl implements TraceService, BaseService {
         return trace(trace, TraceIntent.INFO, caMapper.list(channelMapper.get(channelId).getPeerId()).get(0));
     }
 
+    @Override
+    public String queryBlockByNumberWithCa(Trace trace, CA ca) {
+        return trace(trace, TraceIntent.NUMBER, ca);
+    }
+
+    @Override
+    public String queryBlockInfoWithCa(Trace trace, CA ca) {
+        return trace(trace, TraceIntent.INFO, ca);
+    }
+
     enum TraceIntent {
         TRANSACTION, HASH, NUMBER, INFO
     }
@@ -103,7 +118,7 @@ public class TraceServiceImpl implements TraceService, BaseService {
             return responseFail("Request failed：app key is invalid");
         }
         try {
-            FabricManager manager = FabricHelper.obtain().get(orgMapper, channelMapper, chaincodeMapper, ordererMapper, peerMapper,
+            FabricManager manager = FabricHelper.obtain().get(leagueMapper, orgMapper, channelMapper, chaincodeMapper, ordererMapper, peerMapper,
                     ca, cc);
             return trace(manager, trace, intent);
         } catch (Exception e) {
@@ -114,11 +129,12 @@ public class TraceServiceImpl implements TraceService, BaseService {
 
     private String trace(Trace trace, TraceIntent intent, CA ca) {
         try {
-            FabricManager manager = FabricHelper.obtain().get(orgMapper, channelMapper, ordererMapper, peerMapper,
+            FabricManager manager = FabricHelper.obtain().get(leagueMapper, orgMapper, channelMapper, ordererMapper, peerMapper,
                     ca, trace.getChannelId());
             return trace(manager, trace, intent);
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
+            log.warn(String.format("Request failed： %s", e.getMessage()));
             return responseFail(String.format("Request failed： %s", e.getMessage()));
         }
     }

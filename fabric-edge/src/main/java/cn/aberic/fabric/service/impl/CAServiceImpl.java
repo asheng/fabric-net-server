@@ -16,22 +16,25 @@
 
 package cn.aberic.fabric.service.impl;
 
-import cn.aberic.fabric.dao.CA;
-import cn.aberic.fabric.dao.League;
-import cn.aberic.fabric.dao.Org;
-import cn.aberic.fabric.dao.Peer;
+import cn.aberic.fabric.dao.entity.CA;
+import cn.aberic.fabric.dao.entity.League;
+import cn.aberic.fabric.dao.entity.Org;
+import cn.aberic.fabric.dao.entity.Peer;
 import cn.aberic.fabric.dao.mapper.*;
 import cn.aberic.fabric.service.CAService;
-import cn.aberic.fabric.utils.*;
+import cn.aberic.fabric.utils.CacheUtil;
+import cn.aberic.fabric.utils.DateUtil;
+import cn.aberic.fabric.utils.FabricHelper;
+import cn.aberic.fabric.utils.MD5Util;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 
 /**
@@ -54,8 +57,6 @@ public class CAServiceImpl implements CAService {
     private ChannelMapper channelMapper;
     @Resource
     private ChaincodeMapper chaincodeMapper;
-    @Resource
-    private Environment env;
 
     @Override
     public int add(CA ca, MultipartFile skFile, MultipartFile certificateFile) {
@@ -68,23 +69,31 @@ public class CAServiceImpl implements CAService {
             return 0;
         }
         ca = resetCa(ca);
-        if (saveFileFail(ca, skFile, certificateFile)) {
-            return 0;
+        try {
+            ca.setSk(new String(IOUtils.toByteArray(skFile.getInputStream()), Charset.forName("UTF-8")));
+            ca.setCertificate(new String(IOUtils.toByteArray(certificateFile.getInputStream()), Charset.forName("UTF-8")));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         ca.setDate(DateUtil.getCurrent("yyyy-MM-dd"));
+        CacheUtil.removeHome();
         return caMapper.add(ca);
     }
 
     @Override
     public int update(CA ca, MultipartFile skFile, MultipartFile certificateFile) {
         FabricHelper.obtain().removeChaincodeManager(channelMapper.list(ca.getPeerId()), chaincodeMapper);
+        CacheUtil.removeHome();
         CacheUtil.removeFlagCA(ca.getFlag());
         ca = resetCa(ca);
-        if (StringUtils.isEmpty(ca.getCertificatePath()) || StringUtils.isEmpty(ca.getSkPath())) {
+        if (StringUtils.isEmpty(ca.getCertificate()) || StringUtils.isEmpty(ca.getSk())) {
             return caMapper.updateWithNoFile(ca);
         }
-        if (saveFileFail(ca, skFile, certificateFile)) {
-            return 0;
+        try {
+            ca.setSk(new String(IOUtils.toByteArray(skFile.getInputStream())));
+            ca.setCertificate(new String(IOUtils.toByteArray(certificateFile.getInputStream()), "UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return caMapper.update(ca);
     }
@@ -125,29 +134,41 @@ public class CAServiceImpl implements CAService {
         return caMapper.delete(id);
     }
 
-    private boolean saveFileFail(CA ca, MultipartFile skFile, MultipartFile certificateFile) {
-        String caPath = String.format("%s%s%s%s%s%s%s%s%s%s",
-                env.getProperty("config.dir"),
-                File.separator,
-                ca.getLeagueName(),
-                File.separator,
-                ca.getOrgName(),
-                File.separator,
-                ca.getPeerName(),
-                File.separator,
-                ca.getName(),
-                File.separator);
-        String skPath = String.format("%s%s", caPath, skFile.getOriginalFilename());
-        String certificatePath = String.format("%s%s", caPath, certificateFile.getOriginalFilename());
-        ca.setSkPath(skPath);
-        ca.setCertificatePath(certificatePath);
-        try {
-            FileUtil.save(skFile, certificateFile, skPath, certificatePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return true;
+    @Override
+    public List<Peer> getFullPeers() {
+        List<Peer> peers = peerMapper.listAll();
+        for (Peer peer : peers) {
+            Org org = orgMapper.get(peer.getOrgId());
+            peer.setOrgName(org.getMspId());
+            League league = leagueMapper.get(org.getLeagueId());
+            peer.setLeagueName(league.getName());
         }
-        return false;
+        return peers;
+    }
+
+    @Override
+    public List<Peer> getPeersByCA(CA ca) {
+        Org org = orgMapper.get(peerMapper.get(ca.getPeerId()).getOrgId());
+        List<Peer> peers = peerMapper.list(org.getId());
+        League league = leagueMapper.get(orgMapper.get(org.getId()).getLeagueId());
+        for (Peer peer : peers) {
+            peer.setLeagueName(league.getName());
+            peer.setOrgName(org.getMspId());
+        }
+        return peers;
+    }
+
+    @Override
+    public List<CA> listFullCA() {
+        List<CA> cas = caMapper.listAll();
+        for (CA ca: cas) {
+            Peer peer = peerMapper.get(ca.getPeerId());
+            Org org = orgMapper.get(peer.getOrgId());
+            ca.setPeerName(peer.getName());
+            ca.setOrgName(org.getMspId());
+            ca.setLeagueName(leagueMapper.get(org.getLeagueId()).getName());
+        }
+        return cas;
     }
 
     private CA resetCa(CA ca) {

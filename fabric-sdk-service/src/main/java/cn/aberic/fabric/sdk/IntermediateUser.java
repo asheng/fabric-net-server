@@ -17,6 +17,8 @@
 package cn.aberic.fabric.sdk;
 
 import io.netty.util.internal.StringUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.User;
@@ -32,6 +34,8 @@ import java.util.Set;
 class IntermediateUser implements User, Serializable {
 
     private static final long serialVersionUID = 5695080465408336815L;
+
+    private static Logger log = LogManager.getLogger(IntermediateUser.class);
 
     /** 名称 */
     private String name;
@@ -65,11 +69,11 @@ class IntermediateUser implements User, Serializable {
      * @param skPath          带有节点签名密钥的PEM文件——sk路径
      * @param certificatePath 带有节点的X.509证书的PEM文件——certificate路径
      */
-    IntermediateUser(String name, String skPath, String certificatePath) {
+    IntermediateUser(String leagueName, String orgName, String peerName, String name, String skPath, String certificatePath) {
         this.name = name;
         this.skPath = skPath;
         this.certificatePath = certificatePath;
-        this.keyForFabricStoreName = getKeyForFabricStoreName(this.name, skPath, certificatePath);
+        this.keyForFabricStoreName = getKeyForFabricStoreName(leagueName, orgName, peerName, this.name);
     }
 
     void setFabricStore(FabricStore fabricStore) {
@@ -266,22 +270,26 @@ class IntermediateUser implements User, Serializable {
      * @return 类似user.Org1User1.Org1
      */
     static String getKeyForFabricStoreName(String name, String org) {
-        System.out.println("toKeyValStoreName = " + "user." + name + org);
+        // System.out.println("toKeyValStoreName = " + "user." + name + org);
+        log.info("toKeyValStoreName = " + "user." + name + org);
         return "user." + name + org;
     }
 
     /**
      * 得到联盟存储配置对象key
      *
-     * @param name            用户名称（User1）
-     * @param skPath          带有节点签名密钥的PEM文件——sk路径
-     * @param certificatePath 带有节点的X.509证书的PEM文件——certificate路径
+     * @param leagueName 联盟名称
+     * @param orgName    组织名称
+     * @param peerName   节点名称
+     * @param name       用户名称（User1）
      *
      * @return 类似user.Org1User1.Org1
      */
-    static String getKeyForFabricStoreName(String name, String skPath, String certificatePath) {
-        System.out.println(String.format("toKeyValStoreName = user.%s%s%s", name, skPath, certificatePath));
-        return String.format("user.%s%s%s", name, skPath, certificatePath);
+    static String getKeyForFabricStoreName(String leagueName, String orgName, String peerName, String name) {
+        // System.out.println(String.format("toKeyValStoreName = user.%s%s%s", name, skPath, certificatePath));
+        String key = String.format("toKeyValStoreName = user.%s%s%s%s", leagueName, orgName, peerName, name);
+        log.info(key);
+        return key;
     }
 
 }

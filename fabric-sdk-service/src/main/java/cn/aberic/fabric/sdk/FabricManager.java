@@ -24,8 +24,6 @@ import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * 描述：区块链网络服务管理器
@@ -40,22 +38,22 @@ public class FabricManager {
         this.org = org;
     }
 
-    public void setUser(String username, String skPath, String certificatePath) throws InvalidArgumentException {
+    public void setUser(String leagueName, String orgName, String peerName, String username, String skPath, String certificatePath) throws InvalidArgumentException {
         if (StringUtils.equals(username, org.getUsername())) {
             return;
         }
         User user = org.getUser(username);
         if (null == user) {
-            IntermediateUser intermediateUser = new IntermediateUser(username, skPath, certificatePath);
+            IntermediateUser intermediateUser = new IntermediateUser(leagueName, orgName, peerName, username, skPath, certificatePath);
             org.setUsername(username);
-            org.addUser(intermediateUser, org.getFabricStore());
+            org.addUser(leagueName, orgName, peerName, intermediateUser, org.getFabricStore());
         }
         org.getClient().setUserContext(org.getUser(username));
     }
 
     /** 安装智能合约 */
-    public JSONObject install(String version) throws ProposalException, InvalidArgumentException {
-        return org.getChainCode().install(org, version);
+    public JSONObject install() throws ProposalException, InvalidArgumentException {
+        return org.getChainCode().install(org);
     }
 
     /**
@@ -63,7 +61,7 @@ public class FabricManager {
      *
      * @param args 初始化参数数组
      */
-    public JSONObject instantiate(String[] args) throws ProposalException, InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, InterruptedException, ExecutionException, TimeoutException {
+    public JSONObject instantiate(String[] args) throws ProposalException, InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException {
         return org.getChainCode().instantiate(org, args);
     }
 
@@ -72,7 +70,7 @@ public class FabricManager {
      *
      * @param args 初始化参数数组
      */
-    public JSONObject upgrade(String[] args) throws ProposalException, InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, InterruptedException, ExecutionException, TimeoutException {
+    public JSONObject upgrade(String[] args) throws ProposalException, InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException {
         return org.getChainCode().upgrade(org, args);
     }
 
@@ -82,7 +80,7 @@ public class FabricManager {
      * @param fcn  方法名
      * @param args 参数数组
      */
-    public JSONObject invoke(String fcn, String[] args) throws InvalidArgumentException, ProposalException, IOException, InterruptedException, ExecutionException, TimeoutException {
+    public JSONObject invoke(String fcn, String[] args) throws InvalidArgumentException, ProposalException, IOException {
         return org.getChainCode().invoke(org, fcn, args);
     }
 
@@ -92,8 +90,8 @@ public class FabricManager {
      * @param fcn  方法名
      * @param args 参数数组
      */
-    public JSONObject query(String fcn, String[] args, String version) throws InvalidArgumentException, ProposalException {
-        return org.getChainCode().query(org, fcn, args, version);
+    public JSONObject query(String fcn, String[] args) throws InvalidArgumentException, ProposalException {
+        return org.getChainCode().query(org, fcn, args);
     }
 
     /**
@@ -130,8 +128,8 @@ public class FabricManager {
      * @param peerLocation         当前指定的组织节点访问地址
      * @param peerEventHubLocation 当前指定的组织节点事件监听访问地址
      */
-    public JSONObject joinPeer(String peerName, String peerLocation, String peerEventHubLocation, String serverCrtPath) throws ProposalException, InvalidArgumentException {
-        return org.getChannel().joinPeer(new IntermediatePeer(peerName, peerLocation, peerEventHubLocation, serverCrtPath));
+    public JSONObject joinPeer(String peerName, String peerLocation, String peerEventHubLocation, String serverCrtPath, String clientCertPath, String clientKeyPath) throws ProposalException, InvalidArgumentException {
+        return org.getChannel().joinPeer(new IntermediatePeer(peerName, peerLocation, peerEventHubLocation, serverCrtPath, clientCertPath, clientKeyPath));
     }
 
     /** 查询当前频道的链信息，包括链长度、当前最新区块hash以及当前最新区块的上一区块hash */

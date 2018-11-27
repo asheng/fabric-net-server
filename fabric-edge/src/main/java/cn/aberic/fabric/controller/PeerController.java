@@ -16,12 +16,7 @@
 
 package cn.aberic.fabric.controller;
 
-import cn.aberic.fabric.dao.League;
-import cn.aberic.fabric.dao.Org;
-import cn.aberic.fabric.dao.Peer;
-import cn.aberic.fabric.service.ChannelService;
-import cn.aberic.fabric.service.LeagueService;
-import cn.aberic.fabric.service.OrgService;
+import cn.aberic.fabric.dao.entity.Peer;
 import cn.aberic.fabric.service.PeerService;
 import cn.aberic.fabric.utils.SpringUtil;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +25,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
  * 描述：
@@ -44,27 +38,23 @@ public class PeerController {
 
     @Resource
     private PeerService peerService;
-    @Resource
-    private OrgService orgService;
-    @Resource
-    private LeagueService leagueService;
-    @Resource
-    private ChannelService channelService;
 
     @PostMapping(value = "submit")
     public ModelAndView submit(@ModelAttribute Peer peer,
                                @RequestParam("intent") String intent,
                                @RequestParam("serverCrtFile") MultipartFile serverCrtFile,
+                               @RequestParam("clientCertFile") MultipartFile clientCertFile,
+                               @RequestParam("clientKeyFile") MultipartFile clientKeyFile,
                                @RequestParam("id") int id) {
         switch (intent) {
             case "add":
-                peer = resetPeer(peer);
-                peerService.add(peer, serverCrtFile);
+                peer = peerService.resetPeer(peer);
+                peerService.add(peer, serverCrtFile, clientCertFile, clientKeyFile);
                 break;
             case "edit":
-                peer = resetPeer(peer);
+                peer = peerService.resetPeer(peer);
                 peer.setId(id);
-                peerService.update(peer, serverCrtFile);
+                peerService.update(peer, serverCrtFile, clientCertFile, clientKeyFile);
                 break;
         }
         return new ModelAndView(new RedirectView("list"));
@@ -77,7 +67,7 @@ public class PeerController {
         modelAndView.addObject("submit", SpringUtil.get("submit"));
         modelAndView.addObject("intent", "add");
         modelAndView.addObject("peer", new Peer());
-        modelAndView.addObject("orgs", getForPeerAndOrderer());
+        modelAndView.addObject("orgs", peerService.getForPeerAndOrderer());
         return modelAndView;
     }
 
@@ -88,13 +78,8 @@ public class PeerController {
         modelAndView.addObject("submit", SpringUtil.get("modify"));
         modelAndView.addObject("intent", "edit");
         Peer peer = peerService.get(id);
-        League league = leagueService.get(orgService.get(peer.getOrgId()).getLeagueId());
-        List<Org> orgs = orgService.listById(league.getId());
-        for (Org org : orgs) {
-            org.setLeagueName(league.getName());
-        }
         modelAndView.addObject("peer", peer);
-        modelAndView.addObject("orgs", orgs);
+        modelAndView.addObject("orgs", peerService.listOrgByOrgId(peer.getOrgId()));
         return modelAndView;
     }
 
@@ -107,29 +92,8 @@ public class PeerController {
     @GetMapping(value = "list")
     public ModelAndView list() {
         ModelAndView modelAndView = new ModelAndView("peers");
-        List<Peer> peers = peerService.listAll();
-        for (Peer peer : peers) {
-            peer.setOrgName(orgService.get(peer.getOrgId()).getMspId());
-            peer.setChannelCount(channelService.countById(peer.getId()));
-        }
-        modelAndView.addObject("peers", peers);
+        modelAndView.addObject("peers", peerService.listAll());
         return modelAndView;
-    }
-
-    private List<Org> getForPeerAndOrderer() {
-        List<Org> orgs = orgService.listAll();
-        for (Org org : orgs) {
-            org.setLeagueName(leagueService.get(org.getLeagueId()).getName());
-        }
-        return orgs;
-    }
-
-    private Peer resetPeer(Peer peer) {
-        Org org = orgService.get(peer.getOrgId());
-        League league = leagueService.get(org.getLeagueId());
-        peer.setLeagueName(league.getName());
-        peer.setOrgName(org.getMspId());
-        return peer;
     }
 
 }
